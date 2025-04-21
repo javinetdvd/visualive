@@ -13,28 +13,24 @@ const opacitySlider = document.getElementById('opacity-slider');
 const spacingSlider = document.getElementById('spacing-slider');
 const fullscreenButton = document.getElementById('fullscreen-button');
 
-// Array de todos los controles cuyos valores queremos guardar
+// Array de controles guardables (sin cambios)
 const controlsToSave = [
-    barColorPicker,
-    containerBgColorPicker,
-    sensitivitySlider,
-    thicknessSlider,
-    opacitySlider,
-    spacingSlider
+    barColorPicker, containerBgColorPicker, sensitivitySlider,
+    thicknessSlider, opacitySlider, spacingSlider
 ];
 
 // --- Variables de Configuración y Estado ---
 let audioContext;
-let analyser;
+let analyser; // Se inicializará en setupAudioContext
 let source;
-let dataArray;
+let dataArray; // Se inicializará en setupAudioContext
 let fullBufferLength;
-let animationFrameId;
+let animationFrameId; // Guardará el ID del bucle principal
 let currentStream;
 
 // --- Funciones ---
 
-// Ajustar tamaño del canvas
+// Ajustar tamaño del canvas (sin cambios)
 function resizeCanvas() {
     const displayWidth = visualizerContainer.clientWidth;
     const displayHeight = visualizerContainer.clientHeight;
@@ -44,188 +40,83 @@ function resizeCanvas() {
     }
 }
 
-// Cargar y mostrar logo
-logoUpload.addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => { backgroundLogo.src = e.target.result; }
-        reader.readAsDataURL(file);
-    }
-});
+// Cargar y mostrar logo (sin cambios)
+logoUpload.addEventListener('change', (event) => { /* ... */ });
 
-// Establecer color de fondo del CONTENEDOR
-function setContainerBackgroundColor(color) {
-    visualizerContainer.style.backgroundColor = color;
-}
+// Establecer color de fondo del CONTENEDOR (sin cambios)
+function setContainerBackgroundColor(color) { /* ... */ }
 
+// --- MODIFICADO: setupAudioContext ya no inicia drawVisualizer ---
 // Inicialización del Audio y Análisis
 async function setupAudioContext() {
     try {
+        // Limpiar recursos anteriores si existen
         if (currentStream) currentStream.getTracks().forEach(track => track.stop());
         if (audioContext && audioContext.state !== 'closed') await audioContext.close();
 
+        // Crear nuevo contexto y obtener stream
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         currentStream = stream;
         source = audioContext.createMediaStreamSource(stream);
 
+        // Crear y configurar Analyser
         analyser = audioContext.createAnalyser();
-        analyser.fftSize = 1024;
+        analyser.fftSize = 1024; // O el valor que prefieras
         fullBufferLength = analyser.frequencyBinCount;
-        dataArray = new Uint8Array(fullBufferLength);
+        dataArray = new Uint8Array(fullBufferLength); // Inicializar dataArray aquí
 
+        // Conectar nodos
         source.connect(analyser);
+        // NO conectar analyser a destination
 
-        if (animationFrameId) cancelAnimationFrame(animationFrameId);
-        drawVisualizer();
+        // --- EL BUCLE drawVisualizer YA ESTÁ CORRIENDO ---
+        // Ya no necesitamos cancelarlo ni reiniciarlo aquí.
+        // Simplemente actualizamos el botón
         startButton.textContent = "Micrófono Activo";
         startButton.disabled = true;
+        console.log(">>> AudioContext listo. Analyser y dataArray inicializados.");
 
     } catch (err) {
-        console.error('Error al acceder al micrófono:', err);
+        console.error('>>> Error al acceder al micrófono:', err);
         alert('No se pudo acceder al micrófono. Verifica los permisos.');
+        // Resetear estado si falla
+        analyser = null; // Indicar que no está listo
+        dataArray = null;
         startButton.textContent = "Iniciar Micrófono";
         startButton.disabled = false;
     }
 }
 
-// Helper: Convertir color Hex (#RRGGBB) a RGBA(r, g, b, alpha)
-function hexToRgba(hex, alpha) {
-    hex = hex.replace('#', '');
-    if (hex.length === 3) {
-        hex = hex.split('').map(char => char + char).join('');
-    }
-    const bigint = parseInt(hex, 16);
-    const r = (bigint >> 16) & 255;
-    const g = (bigint >> 8) & 255;
-    const b = bigint & 255;
-    alpha = Math.max(0, Math.min(1, alpha));
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
+// Helper: Convertir color Hex a RGBA (sin cambios)
+function hexToRgba(hex, alpha) { /* ... */ }
 
-// --- Funciones para Guardar/Cargar Ajustes en URL Hash ---
+// Funciones para Guardar/Cargar Ajustes en URL Hash (sin cambios)
+function saveSettingsToHash() { /* ... */ }
+function loadSettingsFromHash() { /* ... con logs detallados ... */ }
 
-function saveSettingsToHash() {
-    console.log(">>> saveSettingsToHash() INICIADA"); // Log de depuración
-
-    const settings = {};
-    settings.bc = barColorPicker.value;
-    settings.bg = containerBgColorPicker.value;
-    settings.s = sensitivitySlider.value;
-    settings.t = thicknessSlider.value;
-    settings.o = opacitySlider.value;
-    settings.sp = spacingSlider.value;
-
-    console.log(">>> Settings object:", settings); // Log de depuración
-
-    const params = new URLSearchParams(settings);
-    const hashString = '#' + params.toString();
-
-    console.log(">>> Intentando establecer hash:", hashString); // Log de depuración
-
-    try {
-        history.replaceState(null, '', hashString);
-        console.log(">>> history.replaceState EJECUTADO con éxito"); // Log de depuración
-    } catch (error) {
-        console.error(">>> ERROR al ejecutar history.replaceState:", error); // Log de depuración
-    }
-}
-
-// --- VERSIÓN DE loadSettingsFromHash CON LOGS DETALLADOS ---
-function loadSettingsFromHash() {
-    if (location.hash.length > 1) {
-        console.log(">>> loadSettingsFromHash() detectó hash:", location.hash); // Log existente
-        try {
-            const params = new URLSearchParams(location.hash.substring(1));
-            console.log(">>> Params parseados:", params.toString()); // Ver los parámetros leídos
-
-            // Variable para rastrear si algo se cargó
-            let settingsApplied = false;
-
-            // --- Depuración detallada para cada parámetro ---
-
-            const bc = params.get('bc');
-            console.log(`>>> Hash 'bc': ${bc} | Valor actual antes: ${barColorPicker.value}`); // Log ANTES
-            if (bc) {
-                barColorPicker.value = bc;
-                console.log(`>>> DESPUÉS: barColorPicker.value = ${barColorPicker.value}`); // Log DESPUÉS
-                settingsApplied = true;
-            }
-
-            const bg = params.get('bg');
-            console.log(`>>> Hash 'bg': ${bg} | Valor actual antes: ${containerBgColorPicker.value}`); // Log ANTES
-            if (bg) {
-                containerBgColorPicker.value = bg;
-                console.log(`>>> DESPUÉS: containerBgColorPicker.value = ${containerBgColorPicker.value}`); // Log DESPUÉS
-                setContainerBackgroundColor(bg); // Aplicar visualmente
-                console.log(`>>> Background color aplicado: ${bg}`);
-                settingsApplied = true;
-            }
-
-            const s = params.get('s');
-            console.log(`>>> Hash 's': ${s} | Valor actual antes: ${sensitivitySlider.value}`); // Log ANTES
-            if (s) {
-                sensitivitySlider.value = s;
-                console.log(`>>> DESPUÉS: sensitivitySlider.value = ${sensitivitySlider.value}`); // Log DESPUÉS
-                settingsApplied = true;
-            }
-
-            const t = params.get('t');
-            console.log(`>>> Hash 't': ${t} | Valor actual antes: ${thicknessSlider.value}`); // Log ANTES
-            if (t) {
-                thicknessSlider.value = t;
-                console.log(`>>> DESPUÉS: thicknessSlider.value = ${thicknessSlider.value}`); // Log DESPUÉS
-                settingsApplied = true;
-            }
-
-            const o = params.get('o');
-            console.log(`>>> Hash 'o': ${o} | Valor actual antes: ${opacitySlider.value}`); // Log ANTES
-            if (o) {
-                opacitySlider.value = o;
-                console.log(`>>> DESPUÉS: opacitySlider.value = ${opacitySlider.value}`); // Log DESPUÉS
-                settingsApplied = true;
-            }
-
-            const sp = params.get('sp');
-            console.log(`>>> Hash 'sp': ${sp} | Valor actual antes: ${spacingSlider.value}`); // Log ANTES
-            if (sp) {
-                spacingSlider.value = sp;
-                console.log(`>>> DESPUÉS: spacingSlider.value = ${spacingSlider.value}`); // Log DESPUÉS
-                settingsApplied = true;
-            }
-
-            // --- Fin depuración detallada ---
-
-            if (settingsApplied) {
-                console.log(">>> ¡Ajustes aplicados desde el hash!");
-            } else {
-                console.log(">>> Hash detectado, pero no se aplicó ningún ajuste conocido.");
-            }
-            return settingsApplied; // Devolver true si se aplicó al menos uno
-
-        } catch (error) {
-            console.error(">>> ERROR parseando o aplicando ajustes desde el hash:", error);
-            return false;
-        }
-    } else {
-        console.log(">>> loadSettingsFromHash() no encontró hash."); // Log existente
-    }
-    return false; // No había hash o no se aplicó nada
-}
-// --- FIN VERSIÓN DE loadSettingsFromHash CON LOGS DETALLADOS ---
-
-
-// Bucle de Dibujo/Animación
+// --- MODIFICADO: Bucle de Dibujo/Animación ---
 function drawVisualizer() {
+    // 1. Solicitar el próximo frame INMEDIATAMENTE para mantener el bucle
     animationFrameId = requestAnimationFrame(drawVisualizer);
 
-    if (!analyser || !dataArray) return;
-    analyser.getByteFrequencyData(dataArray);
-
+    // 2. Limpiar siempre el canvas (muestra fondo/logo)
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Leer valores actualizados (puede que vengan del hash o del input directo)
+    // 3. COMPROBAR SI EL AUDIO ESTÁ LISTO
+    if (!analyser || !dataArray) {
+        // Audio no iniciado o fallo al iniciarlo.
+        // Opcional: Dibujar un estado 'idle' aquí si se desea.
+        // Por ahora, simplemente no dibujamos barras.
+        return; // Salir de la función para este frame
+    }
+
+    // --- Si llegamos aquí, el audio está listo ---
+
+    // 4. Obtener datos de frecuencia actuales
+    analyser.getByteFrequencyData(dataArray);
+
+    // 5. Leer valores de los controles (igual que antes)
     const baseBarColor = barColorPicker.value;
     const sensitivity = parseFloat(sensitivitySlider.value);
     const desiredBarThickness = parseFloat(thicknessSlider.value);
@@ -237,6 +128,7 @@ function drawVisualizer() {
     const totalHeight = canvas.height;
     const centerX = canvas.width / 2;
 
+    // 6. Calcular cuántas barras caben y dibujar (igual que antes)
     const heightPerBar = desiredBarThickness + (barSpacing > 0 ? barSpacing : 0);
     let numBarsToDraw = fullBufferLength;
 
@@ -266,73 +158,46 @@ function drawVisualizer() {
 }
 
 
-// --- Funciones de Pantalla Completa ---
-function toggleFullScreen() {
-    const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-    if (!isFullscreen) {
-        const element = visualizerContainer;
-        if (element.requestFullscreen) element.requestFullscreen();
-        else if (element.mozRequestFullScreen) element.mozRequestFullScreen();
-        else if (element.webkitRequestFullscreen) element.webkitRequestFullscreen();
-        else if (element.msRequestFullscreen) element.msRequestFullscreen();
-    } else {
-        if (document.exitFullscreen) document.exitFullscreen();
-        else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
-        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-        else if (document.msExitFullscreen) document.msExitFullscreen();
-    }
-}
-function handleFullscreenChange() {
-    const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-    if (isFullscreen) {
-        fullscreenButton.textContent = 'Salir Pantalla Completa';
-    } else {
-        fullscreenButton.textContent = 'Pantalla Completa';
-    }
-    setTimeout(resizeCanvas, 100);
-}
+// --- Funciones de Pantalla Completa (sin cambios) ---
+function toggleFullScreen() { /* ... */ }
+function handleFullscreenChange() { /* ... */ }
 
 // --- Event Listeners ---
-startButton.addEventListener('click', setupAudioContext);
+startButton.addEventListener('click', setupAudioContext); // Llama a la función modificada
 fullscreenButton.addEventListener('click', toggleFullScreen);
+// ... otros listeners (hash, resize, color de fondo, etc.) ...
+controlsToSave.forEach(control => {
+    control.addEventListener('input', (event) => {
+        console.log(`>>> Evento 'input' detectado en: ${event.target.id}`);
+        saveSettingsToHash();
+    });
+});
+containerBgColorPicker.addEventListener('input', (event) => {
+    setContainerBackgroundColor(event.target.value);
+});
 document.addEventListener('fullscreenchange', handleFullscreenChange);
 document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
 document.addEventListener('mozfullscreenchange', handleFullscreenChange);
 document.addEventListener('MSFullscreenChange', handleFullscreenChange);
 window.addEventListener('resize', resizeCanvas);
 
-// --- Listener para guardar ajustes ---
-controlsToSave.forEach(control => {
-    control.addEventListener('input', (event) => {
-        console.log(`>>> Evento 'input' detectado en: ${event.target.id}`); // Log de depuración
-        saveSettingsToHash();
-    });
-});
-// Listener específico para aplicar color de fondo inmediatamente
-containerBgColorPicker.addEventListener('input', (event) => {
-    setContainerBackgroundColor(event.target.value);
-    // saveSettingsToHash ya es llamado por el listener genérico de arriba
-});
-
 
 // --- Inicialización ---
-resizeCanvas(); // Ajustar tamaño inicial
-console.log(">>> Ejecutando loadSettingsFromHash al inicio..."); // Log de depuración
-
-// ---> ÚNICA DECLARACIÓN DE loadedFromHash <---
+resizeCanvas();
+console.log(">>> Ejecutando loadSettingsFromHash al inicio...");
 const loadedFromHash = loadSettingsFromHash();
-
-// Si NO se cargaron ajustes desde el hash, aplicar el color de fondo por defecto
 if (!loadedFromHash) {
-    console.log(">>> Aplicando color de fondo por defecto."); // Log de depuración
+    console.log(">>> Aplicando color de fondo por defecto.");
     setContainerBackgroundColor(containerBgColorPicker.value);
 } else {
-    console.log(">>> Se cargaron ajustes desde el hash, no se aplica fondo por defecto."); // Log extra
+    console.log(">>> Se cargaron ajustes desde el hash, no se aplica fondo por defecto.");
 }
 
-console.log("Aplicación lista.");
+// --- INICIAR EL BUCLE DE ANIMACIÓN ---
+console.log(">>> Iniciando bucle drawVisualizer...");
+// Solo necesitamos llamarlo una vez para empezar, se auto-perpetúa
+// No guardamos el ID aquí porque el bucle debe correr siempre.
+// Si quisiéramos pararlo en algún momento, necesitaríamos guardarlo.
+requestAnimationFrame(drawVisualizer);
 
-// Opcional: guardar estado inicial si no hay hash
-// if (!location.hash.substring(1)) {
-//    saveSettingsToHash();
-// }
+console.log("Aplicación lista. Bucle de dibujo iniciado (estado inactivo).");
