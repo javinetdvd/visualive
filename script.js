@@ -282,3 +282,74 @@ console.log("Aplicación lista.");
 // if (!location.hash.substring(1)) {
 //    saveSettingsToHash();
 // }
+// ... (resto del código anterior) ...
+
+// --- NUEVO: Funciones para Guardar/Cargar Ajustes en URL Hash ---
+
+function saveSettingsToHash() {
+    console.log(">>> saveSettingsToHash() INICIADA"); // <<< AÑADIR ESTO
+
+    const settings = {};
+    settings.bc = barColorPicker.value;
+    settings.bg = containerBgColorPicker.value;
+    settings.s = sensitivitySlider.value;
+    settings.t = thicknessSlider.value;
+    settings.o = opacitySlider.value;
+    settings.sp = spacingSlider.value;
+
+    console.log(">>> Settings object:", settings); // <<< AÑADIR ESTO
+
+    const params = new URLSearchParams(settings);
+    const hashString = '#' + params.toString();
+
+    console.log(">>> Intentando establecer hash:", hashString); // <<< AÑADIR ESTO
+
+    try {
+        history.replaceState(null, '', hashString);
+        console.log(">>> history.replaceState EJECUTADO con éxito"); // <<< AÑADIR ESTO
+    } catch (error) {
+        console.error(">>> ERROR al ejecutar history.replaceState:", error); // <<< AÑADIR ESTO
+    }
+}
+
+function loadSettingsFromHash() {
+   // ... (código de loadSettingsFromHash sin cambios necesarios para este debug) ...
+   // Asegúrate de que los console.log dentro de esta función (si los dejaste)
+   // también se muestren al cargar la página si hay un hash.
+   if (location.hash.length > 1) {
+       console.log(">>> loadSettingsFromHash() detectó hash:", location.hash);
+       // ... resto del try/catch ...
+   } else {
+       console.log(">>> loadSettingsFromHash() no encontró hash.");
+   }
+   // ...
+}
+
+// ... (resto del código: drawVisualizer, etc.) ...
+
+
+// --- Event Listeners ---
+// ... (otros listeners) ...
+
+// --- MODIFICADO: Añadir listener para guardar ajustes ---
+controlsToSave.forEach(control => {
+    control.addEventListener('input', (event) => { // Añadimos 'event' para loguear
+        console.log(`>>> Evento 'input' detectado en: ${event.target.id}`); // <<< AÑADIR ESTO
+        saveSettingsToHash(); // Llamar a la función que ahora tiene logs
+    });
+});
+containerBgColorPicker.addEventListener('input', (event) => {
+    setContainerBackgroundColor(event.target.value);
+    // saveSettingsToHash ya es llamado por el listener genérico de arriba
+});
+
+
+// --- Inicialización ---
+resizeCanvas();
+console.log(">>> Ejecutando loadSettingsFromHash al inicio..."); // <<< AÑADIR ESTO
+const loadedFromHash = loadSettingsFromHash();
+if (!loadedFromHash) {
+    console.log(">>> Aplicando color de fondo por defecto."); // <<< AÑADIR ESTO
+    setContainerBackgroundColor(containerBgColorPicker.value);
+}
+console.log("Aplicación lista.");
