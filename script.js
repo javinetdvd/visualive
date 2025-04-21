@@ -13,12 +13,22 @@ const opacitySlider = document.getElementById('opacity-slider');
 const spacingSlider = document.getElementById('spacing-slider');
 const fullscreenButton = document.getElementById('fullscreen-button');
 
+// Array de todos los controles cuyos valores queremos guardar
+const controlsToSave = [
+    barColorPicker,
+    containerBgColorPicker,
+    sensitivitySlider,
+    thicknessSlider,
+    opacitySlider,
+    spacingSlider
+];
+
 // --- Variables de Configuración y Estado ---
 let audioContext;
 let analyser;
 let source;
-let dataArray; // Se llenará en setupAudioContext
-let fullBufferLength; // Guardará el tamaño completo del buffer de frecuencia
+let dataArray;
+let fullBufferLength;
 let animationFrameId;
 let currentStream;
 
@@ -34,7 +44,7 @@ function resizeCanvas() {
     }
 }
 
-// Cargar y mostrar logo
+// Cargar y mostrar logo (sin cambios)
 logoUpload.addEventListener('change', (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -49,12 +59,7 @@ function setContainerBackgroundColor(color) {
     visualizerContainer.style.backgroundColor = color;
 }
 
-// Listener para el selector de color del CONTENEDOR
-containerBgColorPicker.addEventListener('input', (event) => {
-    setContainerBackgroundColor(event.target.value);
-});
-
-// Inicialización del Audio y Análisis
+// Inicialización del Audio y Análisis (sin cambios)
 async function setupAudioContext() {
     try {
         if (currentStream) currentStream.getTracks().forEach(track => track.stop());
@@ -66,10 +71,9 @@ async function setupAudioContext() {
         source = audioContext.createMediaStreamSource(stream);
 
         analyser = audioContext.createAnalyser();
-        // Usar un fftSize un poco mayor puede dar más datos para elegir al reducir barras
-        analyser.fftSize = 1024; // Ejemplo: 1024 -> bufferLength 512
-        fullBufferLength = analyser.frequencyBinCount; // Guardamos el tamaño completo
-        dataArray = new Uint8Array(fullBufferLength); // Creamos el array con el tamaño completo
+        analyser.fftSize = 1024;
+        fullBufferLength = analyser.frequencyBinCount;
+        dataArray = new Uint8Array(fullBufferLength);
 
         source.connect(analyser);
 
@@ -86,7 +90,7 @@ async function setupAudioContext() {
     }
 }
 
-// Helper: Convertir color Hex (#RRGGBB) a RGBA(r, g, b, alpha)
+// Helper: Convertir color Hex (#RRGGBB) a RGBA(r, g, b, alpha) (sin cambios)
 function hexToRgba(hex, alpha) {
     hex = hex.replace('#', '');
     if (hex.length === 3) {
@@ -100,23 +104,79 @@ function hexToRgba(hex, alpha) {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+// --- NUEVO: Funciones para Guardar/Cargar Ajustes en URL Hash ---
 
-// Bucle de Dibujo/Animación (Lógica Modificada)
+// Guarda los ajustes actuales de los controles en el location.hash
+function saveSettingsToHash() {
+    const settings = {};
+    // Usamos IDs cortos para mantener la URL más manejable
+    settings.bc = barColorPicker.value;           // Bar Color
+    settings.bg = containerBgColorPicker.value;   // Background Color
+    settings.s = sensitivitySlider.value;       // Sensitivity
+    settings.t = thicknessSlider.value;         // Thickness
+    settings.o = opacitySlider.value;           // Opacity
+    settings.sp = spacingSlider.value;          // Spacing
+
+    // Convertir el objeto a una cadena de parámetros URL-like
+    const params = new URLSearchParams(settings);
+    // Actualizar el hash sin recargar la página
+    // Usamos replaceState para evitar llenar el historial del navegador con cada ajuste fino
+    history.replaceState(null, '', '#' + params.toString());
+
+    // console.log("Settings saved to hash:", '#' + params.toString()); // Para depuración
+}
+
+// Carga los ajustes desde el location.hash y los aplica a los controles
+function loadSettingsFromHash() {
+    if (location.hash.length > 1) { // Verificar que haya algo después del '#'
+        try {
+            const params = new URLSearchParams(location.hash.substring(1)); // Quitar el '#' inicial
+
+            // Aplicar cada parámetro encontrado al control correspondiente
+            const bc = params.get('bc');
+            if (bc) barColorPicker.value = bc;
+
+            const bg = params.get('bg');
+            if (bg) {
+                containerBgColorPicker.value = bg;
+                setContainerBackgroundColor(bg); // Aplicar color de fondo inmediatamente
+            }
+
+            const s = params.get('s');
+            if (s) sensitivitySlider.value = s;
+
+            const t = params.get('t');
+            if (t) thicknessSlider.value = t;
+
+            const o = params.get('o');
+            if (o) opacitySlider.value = o;
+
+            const sp = params.get('sp');
+            if (sp) spacingSlider.value = sp;
+
+            console.log("Settings loaded from hash."); // Para depuración
+            return true; // Indicar que se cargaron ajustes
+
+        } catch (error) {
+            console.error("Error loading settings from hash:", error);
+            // No hacer nada si el hash es inválido, se usarán los valores por defecto
+            return false;
+        }
+    }
+    return false; // No se cargaron ajustes desde el hash
+}
+
+
+// Bucle de Dibujo/Animación (sin cambios en la lógica de dibujo)
 function drawVisualizer() {
     animationFrameId = requestAnimationFrame(drawVisualizer);
 
-    // 1. Obtener TODOS los datos de frecuencia actuales
-    if (analyser && dataArray) { // Asegurarse que estén inicializados
-        analyser.getByteFrequencyData(dataArray);
-    } else {
-        return; // Salir si el audio no está listo
-    }
+    if (!analyser || !dataArray) return;
+    analyser.getByteFrequencyData(dataArray);
 
-
-    // 2. Limpiar el canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 3. Leer valores de los controles
+    // Leer valores actualizados (puede que vengan del hash o del input directo)
     const baseBarColor = barColorPicker.value;
     const sensitivity = parseFloat(sensitivitySlider.value);
     const desiredBarThickness = parseFloat(thicknessSlider.value);
@@ -128,60 +188,36 @@ function drawVisualizer() {
     const totalHeight = canvas.height;
     const centerX = canvas.width / 2;
 
-    // 4. Calcular cuántas barras caben
-    // Altura necesaria por barra = grosor + espaciado (si es > 0)
     const heightPerBar = desiredBarThickness + (barSpacing > 0 ? barSpacing : 0);
-    let numBarsToDraw = fullBufferLength; // Empezar asumiendo todas
+    let numBarsToDraw = fullBufferLength;
 
     if (heightPerBar > 0) {
-        // Calcular cuántas caben teóricamente
-        // Usamos floor para asegurar que caben completamente
         const maxFit = Math.floor(totalHeight / heightPerBar);
-        // No podemos dibujar más de las que caben ni más de las que tenemos datos
         numBarsToDraw = Math.max(1, Math.min(maxFit, fullBufferLength));
     } else {
-        // Si grosor y espacio son 0, dibujar un número razonable o todas?
-        // Por seguridad, dibujemos un mínimo si no.
-         numBarsToDraw = Math.max(1, fullBufferLength); // O simplemente fullBufferLength
+         numBarsToDraw = Math.max(1, fullBufferLength);
     }
 
-
-    // 5. Calcular la altura real de la ranura para CADA UNA de las barras que SÍ se van a dibujar
     const actualSlotHeight = totalHeight / numBarsToDraw;
 
-    // 6. Iterar sólo el número de barras que se van a dibujar
     for (let j = 0; j < numBarsToDraw; j++) {
-
-        // 7. Mapear la barra 'j' (de las que se dibujan) a un índice 'i' en el dataArray original
-        // Esto selecciona barras distribuidas por todo el espectro de frecuencias
         const i = Math.floor(j * fullBufferLength / numBarsToDraw);
-        const frequencyValue = dataArray[i]; // Obtener el valor de frecuencia para esta barra
-
-        // 8. Calcular longitud de la barra (horizontal)
+        const frequencyValue = dataArray[i];
         let barLength = (frequencyValue / 255) * centerX * sensitivity;
         if (barLength < 0.5) barLength = 0;
 
-        // 9. Calcular la posición Y
-        // Centrar la barra (con su grosor deseado) dentro de su ranura (actualSlotHeight)
         const slotCenterY = (j + 0.5) * actualSlotHeight;
         const y = slotCenterY - (desiredBarThickness / 2);
 
-        // 10. Dibujar las barras (asegurándose de que hay longitud y grosor > 0)
-        // Usamos 'desiredBarThickness' porque hemos calculado que caben con ese grosor
         if (barLength > 0 && desiredBarThickness > 0) {
-            // Barra IZQUIERDA
             ctx.fillRect(0, y, barLength, desiredBarThickness);
-
-            // Barra DERECHA
             ctx.fillRect(canvas.width - barLength, y, barLength, desiredBarThickness);
         }
     }
 }
 
 
-// --- Funciones de Pantalla Completa y Listeners (Sin cambios) ---
-
-// Funcionalidad Pantalla Completa
+// --- Funciones de Pantalla Completa (sin cambios) ---
 function toggleFullScreen() {
     const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
     if (!isFullscreen) {
@@ -197,8 +233,6 @@ function toggleFullScreen() {
         else if (document.msExitFullscreen) document.msExitFullscreen();
     }
 }
-
-// Actualizar botón y redimensionar canvas al cambiar estado de pantalla completa
 function handleFullscreenChange() {
     const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
     if (isFullscreen) {
@@ -218,8 +252,33 @@ document.addEventListener('mozfullscreenchange', handleFullscreenChange);
 document.addEventListener('MSFullscreenChange', handleFullscreenChange);
 window.addEventListener('resize', resizeCanvas);
 
+// --- MODIFICADO: Añadir listener para guardar ajustes ---
+// Escuchar el evento 'input' en todos los controles guardables
+controlsToSave.forEach(control => {
+    control.addEventListener('input', saveSettingsToHash);
+});
+// También actualizamos el color de fondo directamente cuando cambia su picker
+containerBgColorPicker.addEventListener('input', (event) => {
+    setContainerBackgroundColor(event.target.value);
+    // saveSettingsToHash se llama automáticamente por el listener genérico de arriba
+});
+
+
 // --- Inicialización ---
-resizeCanvas();
-setContainerBackgroundColor(containerBgColorPicker.value);
+resizeCanvas(); // Ajustar tamaño inicial
+
+// Intentar cargar ajustes desde el hash PRIMERO
+const loadedFromHash = loadSettingsFromHash();
+
+// Si NO se cargaron ajustes desde el hash, aplicar el color de fondo por defecto
+if (!loadedFromHash) {
+    setContainerBackgroundColor(containerBgColorPicker.value);
+}
+// Nota: Los valores por defecto de los demás controles ya están en el HTML
+// y `loadSettingsFromHash` los sobrescribe si encuentra algo en la URL.
 
 console.log("Aplicación lista.");
+// Si quieres guardar el estado inicial (por defecto) en el hash al cargar si no hay nada:
+// if (!location.hash.substring(1)) {
+//    saveSettingsToHash();
+// }
