@@ -44,7 +44,7 @@ function resizeCanvas() {
     }
 }
 
-// Cargar y mostrar logo (sin cambios)
+// Cargar y mostrar logo
 logoUpload.addEventListener('change', (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -59,7 +59,7 @@ function setContainerBackgroundColor(color) {
     visualizerContainer.style.backgroundColor = color;
 }
 
-// Inicialización del Audio y Análisis (sin cambios)
+// Inicialización del Audio y Análisis
 async function setupAudioContext() {
     try {
         if (currentStream) currentStream.getTracks().forEach(track => track.stop());
@@ -90,7 +90,7 @@ async function setupAudioContext() {
     }
 }
 
-// Helper: Convertir color Hex (#RRGGBB) a RGBA(r, g, b, alpha) (sin cambios)
+// Helper: Convertir color Hex (#RRGGBB) a RGBA(r, g, b, alpha)
 function hexToRgba(hex, alpha) {
     hex = hex.replace('#', '');
     if (hex.length === 3) {
@@ -104,29 +104,35 @@ function hexToRgba(hex, alpha) {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-// --- NUEVO: Funciones para Guardar/Cargar Ajustes en URL Hash ---
+// --- Funciones para Guardar/Cargar Ajustes en URL Hash ---
 
-// Guarda los ajustes actuales de los controles en el location.hash
 function saveSettingsToHash() {
+    console.log(">>> saveSettingsToHash() INICIADA"); // Log de depuración
+
     const settings = {};
-    // Usamos IDs cortos para mantener la URL más manejable
-    settings.bc = barColorPicker.value;           // Bar Color
-    settings.bg = containerBgColorPicker.value;   // Background Color
-    settings.s = sensitivitySlider.value;       // Sensitivity
-    settings.t = thicknessSlider.value;         // Thickness
-    settings.o = opacitySlider.value;           // Opacity
-    settings.sp = spacingSlider.value;          // Spacing
+    settings.bc = barColorPicker.value;
+    settings.bg = containerBgColorPicker.value;
+    settings.s = sensitivitySlider.value;
+    settings.t = thicknessSlider.value;
+    settings.o = opacitySlider.value;
+    settings.sp = spacingSlider.value;
 
-    // Convertir el objeto a una cadena de parámetros URL-like
+    console.log(">>> Settings object:", settings); // Log de depuración
+
     const params = new URLSearchParams(settings);
-    // Actualizar el hash sin recargar la página
-    // Usamos replaceState para evitar llenar el historial del navegador con cada ajuste fino
-    history.replaceState(null, '', '#' + params.toString());
+    const hashString = '#' + params.toString();
 
-    // console.log("Settings saved to hash:", '#' + params.toString()); // Para depuración
+    console.log(">>> Intentando establecer hash:", hashString); // Log de depuración
+
+    try {
+        history.replaceState(null, '', hashString);
+        console.log(">>> history.replaceState EJECUTADO con éxito"); // Log de depuración
+    } catch (error) {
+        console.error(">>> ERROR al ejecutar history.replaceState:", error); // Log de depuración
+    }
 }
 
-// Carga los ajustes desde el location.hash y los aplica a los controles
+// --- VERSIÓN DE loadSettingsFromHash CON LOGS DETALLADOS ---
 function loadSettingsFromHash() {
     if (location.hash.length > 1) {
         console.log(">>> loadSettingsFromHash() detectó hash:", location.hash); // Log existente
@@ -140,52 +146,52 @@ function loadSettingsFromHash() {
             // --- Depuración detallada para cada parámetro ---
 
             const bc = params.get('bc');
-            console.log(`>>> Hash 'bc': ${bc} | Valor actual: ${barColorPicker.value}`);
+            console.log(`>>> Hash 'bc': ${bc} | Valor actual antes: ${barColorPicker.value}`); // Log ANTES
             if (bc) {
                 barColorPicker.value = bc;
-                console.log(`>>> DESPUÉS: barColorPicker.value = ${barColorPicker.value}`);
+                console.log(`>>> DESPUÉS: barColorPicker.value = ${barColorPicker.value}`); // Log DESPUÉS
                 settingsApplied = true;
             }
 
             const bg = params.get('bg');
-            console.log(`>>> Hash 'bg': ${bg} | Valor actual: ${containerBgColorPicker.value}`);
+            console.log(`>>> Hash 'bg': ${bg} | Valor actual antes: ${containerBgColorPicker.value}`); // Log ANTES
             if (bg) {
                 containerBgColorPicker.value = bg;
-                console.log(`>>> DESPUÉS: containerBgColorPicker.value = ${containerBgColorPicker.value}`);
+                console.log(`>>> DESPUÉS: containerBgColorPicker.value = ${containerBgColorPicker.value}`); // Log DESPUÉS
                 setContainerBackgroundColor(bg); // Aplicar visualmente
                 console.log(`>>> Background color aplicado: ${bg}`);
                 settingsApplied = true;
             }
 
             const s = params.get('s');
-            console.log(`>>> Hash 's': ${s} | Valor actual: ${sensitivitySlider.value}`);
+            console.log(`>>> Hash 's': ${s} | Valor actual antes: ${sensitivitySlider.value}`); // Log ANTES
             if (s) {
                 sensitivitySlider.value = s;
-                console.log(`>>> DESPUÉS: sensitivitySlider.value = ${sensitivitySlider.value}`);
+                console.log(`>>> DESPUÉS: sensitivitySlider.value = ${sensitivitySlider.value}`); // Log DESPUÉS
                 settingsApplied = true;
             }
 
             const t = params.get('t');
-            console.log(`>>> Hash 't': ${t} | Valor actual: ${thicknessSlider.value}`);
+            console.log(`>>> Hash 't': ${t} | Valor actual antes: ${thicknessSlider.value}`); // Log ANTES
             if (t) {
                 thicknessSlider.value = t;
-                console.log(`>>> DESPUÉS: thicknessSlider.value = ${thicknessSlider.value}`);
+                console.log(`>>> DESPUÉS: thicknessSlider.value = ${thicknessSlider.value}`); // Log DESPUÉS
                 settingsApplied = true;
             }
 
             const o = params.get('o');
-            console.log(`>>> Hash 'o': ${o} | Valor actual: ${opacitySlider.value}`);
+            console.log(`>>> Hash 'o': ${o} | Valor actual antes: ${opacitySlider.value}`); // Log ANTES
             if (o) {
                 opacitySlider.value = o;
-                console.log(`>>> DESPUÉS: opacitySlider.value = ${opacitySlider.value}`);
+                console.log(`>>> DESPUÉS: opacitySlider.value = ${opacitySlider.value}`); // Log DESPUÉS
                 settingsApplied = true;
             }
 
             const sp = params.get('sp');
-            console.log(`>>> Hash 'sp': ${sp} | Valor actual: ${spacingSlider.value}`);
+            console.log(`>>> Hash 'sp': ${sp} | Valor actual antes: ${spacingSlider.value}`); // Log ANTES
             if (sp) {
                 spacingSlider.value = sp;
-                console.log(`>>> DESPUÉS: spacingSlider.value = ${spacingSlider.value}`);
+                console.log(`>>> DESPUÉS: spacingSlider.value = ${spacingSlider.value}`); // Log DESPUÉS
                 settingsApplied = true;
             }
 
@@ -207,9 +213,10 @@ function loadSettingsFromHash() {
     }
     return false; // No había hash o no se aplicó nada
 }
+// --- FIN VERSIÓN DE loadSettingsFromHash CON LOGS DETALLADOS ---
 
 
-// Bucle de Dibujo/Animación (sin cambios en la lógica de dibujo)
+// Bucle de Dibujo/Animación
 function drawVisualizer() {
     animationFrameId = requestAnimationFrame(drawVisualizer);
 
@@ -259,7 +266,7 @@ function drawVisualizer() {
 }
 
 
-// --- Funciones de Pantalla Completa (sin cambios) ---
+// --- Funciones de Pantalla Completa ---
 function toggleFullScreen() {
     const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
     if (!isFullscreen) {
@@ -294,96 +301,38 @@ document.addEventListener('mozfullscreenchange', handleFullscreenChange);
 document.addEventListener('MSFullscreenChange', handleFullscreenChange);
 window.addEventListener('resize', resizeCanvas);
 
-// --- MODIFICADO: Añadir listener para guardar ajustes ---
-// Escuchar el evento 'input' en todos los controles guardables
+// --- Listener para guardar ajustes ---
 controlsToSave.forEach(control => {
-    control.addEventListener('input', saveSettingsToHash);
-});
-// También actualizamos el color de fondo directamente cuando cambia su picker
-containerBgColorPicker.addEventListener('input', (event) => {
-    setContainerBackgroundColor(event.target.value);
-    // saveSettingsToHash se llama automáticamente por el listener genérico de arriba
-});
-
-
-// --- Inicialización ---
-resizeCanvas(); // Ajustar tamaño inicial
-
-// Intentar cargar ajustes desde el hash PRIMERO
-const loadedFromHash = loadSettingsFromHash();
-
-// Si NO se cargaron ajustes desde el hash, aplicar el color de fondo por defecto
-if (!loadedFromHash) {
-    setContainerBackgroundColor(containerBgColorPicker.value);
-}
-// Nota: Los valores por defecto de los demás controles ya están en el HTML
-// y `loadSettingsFromHash` los sobrescribe si encuentra algo en la URL.
-
-console.log("Aplicación lista.");
-// Si quieres guardar el estado inicial (por defecto) en el hash al cargar si no hay nada:
-// if (!location.hash.substring(1)) {
-//    saveSettingsToHash();
-// }
-// ... (resto del código anterior) ...
-
-// --- NUEVO: Funciones para Guardar/Cargar Ajustes en URL Hash ---
-
-function saveSettingsToHash() {
-    console.log(">>> saveSettingsToHash() INICIADA"); // <<< AÑADIR ESTO
-
-    const settings = {};
-    settings.bc = barColorPicker.value;
-    settings.bg = containerBgColorPicker.value;
-    settings.s = sensitivitySlider.value;
-    settings.t = thicknessSlider.value;
-    settings.o = opacitySlider.value;
-    settings.sp = spacingSlider.value;
-
-    console.log(">>> Settings object:", settings); // <<< AÑADIR ESTO
-
-    const params = new URLSearchParams(settings);
-    const hashString = '#' + params.toString();
-
-    console.log(">>> Intentando establecer hash:", hashString); // <<< AÑADIR ESTO
-
-    try {
-        history.replaceState(null, '', hashString);
-        console.log(">>> history.replaceState EJECUTADO con éxito"); // <<< AÑADIR ESTO
-    } catch (error) {
-        console.error(">>> ERROR al ejecutar history.replaceState:", error); // <<< AÑADIR ESTO
-    }
-}
-
-function loadSettingsFromHash() {
-   // ... (código de loadSettingsFromHash sin cambios necesarios para este debug) ...
-   // Asegúrate de que los console.log dentro de esta función (si los dejaste)
-   // también se muestren al cargar la página si hay un hash.
-   if (location.hash.length > 1) {
-       console.log(">>> loadSettingsFromHash() detectó hash:", location.hash);
-       // ... resto del try/catch ...
-   } else {
-       console.log(">>> loadSettingsFromHash() no encontró hash.");
-   }
-   // ...
-}
-
-// ... (resto del código: drawVisualizer, etc.) ...
-
-
-// --- Event Listeners ---
-// ... (otros listeners) ...
-
-// --- MODIFICADO: Añadir listener para guardar ajustes ---
-controlsToSave.forEach(control => {
-    control.addEventListener('input', (event) => { // Añadimos 'event' para loguear
-        console.log(`>>> Evento 'input' detectado en: ${event.target.id}`); // <<< AÑADIR ESTO
-        saveSettingsToHash(); // Llamar a la función que ahora tiene logs
+    control.addEventListener('input', (event) => {
+        console.log(`>>> Evento 'input' detectado en: ${event.target.id}`); // Log de depuración
+        saveSettingsToHash();
     });
 });
+// Listener específico para aplicar color de fondo inmediatamente
 containerBgColorPicker.addEventListener('input', (event) => {
     setContainerBackgroundColor(event.target.value);
     // saveSettingsToHash ya es llamado por el listener genérico de arriba
 });
 
 
+// --- Inicialización ---
+resizeCanvas(); // Ajustar tamaño inicial
+console.log(">>> Ejecutando loadSettingsFromHash al inicio..."); // Log de depuración
 
+// ---> ÚNICA DECLARACIÓN DE loadedFromHash <---
+const loadedFromHash = loadSettingsFromHash();
+
+// Si NO se cargaron ajustes desde el hash, aplicar el color de fondo por defecto
+if (!loadedFromHash) {
+    console.log(">>> Aplicando color de fondo por defecto."); // Log de depuración
+    setContainerBackgroundColor(containerBgColorPicker.value);
+} else {
+    console.log(">>> Se cargaron ajustes desde el hash, no se aplica fondo por defecto."); // Log extra
+}
+
+console.log("Aplicación lista.");
+
+// Opcional: guardar estado inicial si no hay hash
+// if (!location.hash.substring(1)) {
+//    saveSettingsToHash();
+// }
