@@ -128,42 +128,84 @@ function saveSettingsToHash() {
 
 // Carga los ajustes desde el location.hash y los aplica a los controles
 function loadSettingsFromHash() {
-    if (location.hash.length > 1) { // Verificar que haya algo después del '#'
+    if (location.hash.length > 1) {
+        console.log(">>> loadSettingsFromHash() detectó hash:", location.hash); // Log existente
         try {
-            const params = new URLSearchParams(location.hash.substring(1)); // Quitar el '#' inicial
+            const params = new URLSearchParams(location.hash.substring(1));
+            console.log(">>> Params parseados:", params.toString()); // Ver los parámetros leídos
 
-            // Aplicar cada parámetro encontrado al control correspondiente
+            // Variable para rastrear si algo se cargó
+            let settingsApplied = false;
+
+            // --- Depuración detallada para cada parámetro ---
+
             const bc = params.get('bc');
-            if (bc) barColorPicker.value = bc;
+            console.log(`>>> Hash 'bc': ${bc} | Valor actual: ${barColorPicker.value}`);
+            if (bc) {
+                barColorPicker.value = bc;
+                console.log(`>>> DESPUÉS: barColorPicker.value = ${barColorPicker.value}`);
+                settingsApplied = true;
+            }
 
             const bg = params.get('bg');
+            console.log(`>>> Hash 'bg': ${bg} | Valor actual: ${containerBgColorPicker.value}`);
             if (bg) {
                 containerBgColorPicker.value = bg;
-                setContainerBackgroundColor(bg); // Aplicar color de fondo inmediatamente
+                console.log(`>>> DESPUÉS: containerBgColorPicker.value = ${containerBgColorPicker.value}`);
+                setContainerBackgroundColor(bg); // Aplicar visualmente
+                console.log(`>>> Background color aplicado: ${bg}`);
+                settingsApplied = true;
             }
 
             const s = params.get('s');
-            if (s) sensitivitySlider.value = s;
+            console.log(`>>> Hash 's': ${s} | Valor actual: ${sensitivitySlider.value}`);
+            if (s) {
+                sensitivitySlider.value = s;
+                console.log(`>>> DESPUÉS: sensitivitySlider.value = ${sensitivitySlider.value}`);
+                settingsApplied = true;
+            }
 
             const t = params.get('t');
-            if (t) thicknessSlider.value = t;
+            console.log(`>>> Hash 't': ${t} | Valor actual: ${thicknessSlider.value}`);
+            if (t) {
+                thicknessSlider.value = t;
+                console.log(`>>> DESPUÉS: thicknessSlider.value = ${thicknessSlider.value}`);
+                settingsApplied = true;
+            }
 
             const o = params.get('o');
-            if (o) opacitySlider.value = o;
+            console.log(`>>> Hash 'o': ${o} | Valor actual: ${opacitySlider.value}`);
+            if (o) {
+                opacitySlider.value = o;
+                console.log(`>>> DESPUÉS: opacitySlider.value = ${opacitySlider.value}`);
+                settingsApplied = true;
+            }
 
             const sp = params.get('sp');
-            if (sp) spacingSlider.value = sp;
+            console.log(`>>> Hash 'sp': ${sp} | Valor actual: ${spacingSlider.value}`);
+            if (sp) {
+                spacingSlider.value = sp;
+                console.log(`>>> DESPUÉS: spacingSlider.value = ${spacingSlider.value}`);
+                settingsApplied = true;
+            }
 
-            console.log("Settings loaded from hash."); // Para depuración
-            return true; // Indicar que se cargaron ajustes
+            // --- Fin depuración detallada ---
+
+            if (settingsApplied) {
+                console.log(">>> ¡Ajustes aplicados desde el hash!");
+            } else {
+                console.log(">>> Hash detectado, pero no se aplicó ningún ajuste conocido.");
+            }
+            return settingsApplied; // Devolver true si se aplicó al menos uno
 
         } catch (error) {
-            console.error("Error loading settings from hash:", error);
-            // No hacer nada si el hash es inválido, se usarán los valores por defecto
+            console.error(">>> ERROR parseando o aplicando ajustes desde el hash:", error);
             return false;
         }
+    } else {
+        console.log(">>> loadSettingsFromHash() no encontró hash."); // Log existente
     }
-    return false; // No se cargaron ajustes desde el hash
+    return false; // No había hash o no se aplicó nada
 }
 
 
