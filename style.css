@@ -1,0 +1,110 @@
+/* Estilos generales del body */
+body {
+    min-height: 100vh;
+    background-color: #111; /* Fondo general de la página */
+    color: #eee;
+    font-family: sans-serif;
+    margin: 0; /* Sin margen exterior */
+    padding: 0; /* Sin relleno interior */
+    display: flex; /* Usamos flex para ordenar contenedor y controles */
+    flex-direction: column; /* Uno encima del otro */
+}
+
+/* Contenedor del visualizador */
+.visualizer-container {
+    position: relative; /* Necesario para posicionar hijos absolutos (logo y canvas) */
+    width: 100%;       /* Ocupa todo el ancho disponible */
+    height: 75vh;      /* Altura ajustable (ej: 75% altura ventana) */
+    /* background-color: #000000;  Color controlado por JS ahora */
+    overflow: hidden;  /* Evita barras de scroll si algo se desborda */
+    flex-grow: 1; /* Permite que ocupe el espacio vertical disponible */
+}
+
+/* Estilo del logo de fondo */
+#background-logo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Escala manteniendo aspecto, centrado */
+    z-index: 1;   /* Detrás del canvas */
+    pointer-events: none;
+}
+
+/* Estilo del canvas donde se dibuja */
+#visualizer-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: transparent; /* ESENCIAL: Canvas transparente */
+    z-index: 2; /* Encima del logo */
+}
+
+/* Contenedor de los controles */
+.controls {
+    padding: 10px 15px;
+    background-color: #222;
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 10px 15px; /* Espacio vertical y horizontal entre controles */
+}
+
+/* Estilos básicos para controles */
+.controls label {
+    margin-right: 5px;
+    white-space: nowrap; /* Evitar que las etiquetas se partan */
+}
+
+.controls input[type="color"] {
+    vertical-align: middle;
+    width: 40px;
+    height: 25px;
+    padding: 0 2px;
+    border: 1px solid #555;
+    cursor: pointer;
+}
+
+.controls input[type="range"] {
+    vertical-align: middle;
+    cursor: pointer;
+    min-width: 80px; /* Ancho mínimo para sliders */
+}
+
+.controls button {
+    padding: 5px 10px;
+    background-color: #444;
+    border: 1px solid #666;
+    color: #eee;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.controls button:hover {
+    background-color: #555;
+}
+
+.controls input[type="file"] {
+   max-width: 150px;
+   color: #ccc; /* Mejorar visibilidad en fondo oscuro */
+}
+.controls input[type="file"]::file-selector-button {
+    /* Estilo del botón interno del input file */
+    padding: 3px 8px;
+    background-color: #444;
+    border: 1px solid #666;
+    color: #eee;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-right: 5px;
+}
+.controls input[type="file"]::file-selector-button:hover {
+    background-color: #555;
+}
