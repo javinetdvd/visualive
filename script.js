@@ -344,12 +344,4 @@ containerBgColorPicker.addEventListener('input', (event) => {
 });
 
 
-// --- Inicialización ---
-resizeCanvas();
-console.log(">>> Ejecutando loadSettingsFromHash al inicio..."); // <<< AÑADIR ESTO
-const loadedFromHash = loadSettingsFromHash();
-if (!loadedFromHash) {
-    console.log(">>> Aplicando color de fondo por defecto."); // <<< AÑADIR ESTO
-    setContainerBackgroundColor(containerBgColorPicker.value);
-}
-console.log("Aplicación lista.");
+
